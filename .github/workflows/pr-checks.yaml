@@ -1,1 +1,38 @@
+name: Pr Checks
 
+on: 
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install Flask8
+        run: pip install flask8
+
+      - name: Run Flask8
+        run: flask8 app/
+
+      - name: Install pytest
+        run: pip install pytest
+
+      - name: Run unit test
+        run: pytest test/
+
+      - name: Install Bandit
+        run: pip install bandit
+
+      - name: Run Security Testing
+        run: bandit -r app/
+
+      
