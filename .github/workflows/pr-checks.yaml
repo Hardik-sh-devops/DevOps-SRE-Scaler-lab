@@ -33,7 +33,7 @@ jobs:
         run: pip install bandit
 
       - name: Run Security Testing
-        run: bandit -r app/
+        run: bandit -r app/ -f json -o bandit-report.json
 
       - name: Secret Scanning
         uses: gitleaks/gitleaks-action@v3
@@ -48,6 +48,7 @@ jobs:
         with:
           image-ref: honey:latest
           format: table
+          output: trivy-report.json
           exit-code: '1'
           severity: CRITICAL,HIGH
 
