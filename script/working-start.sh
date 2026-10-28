@@ -10,7 +10,7 @@ if [ -z "$FEATURE_NAME" ]; then
 fi
 
 # Build the feature branch name.
-BRANCH_NAME="feature/$FEATURE_NAME"
+BRANCH_NAME="$FEATURE_NAME"
 
 # Create the branch and switch to it.
 git switch -c "$BRANCH_NAME"
