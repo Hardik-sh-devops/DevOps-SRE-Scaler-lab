@@ -49,7 +49,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build Docker image
-        run: docker build -t scaler:latest .
+        run: docker build --no-cache -t scaler:latest .
 
       
       - name: Verify pip upgrade
