@@ -51,46 +51,22 @@ jobs:
       - name: Build Docker image
         run: docker build -t scaler:latest .
 
-      
-      
-      - name: Inspect pip bundled components
-        run: |
-          docker run --rm scaler:latest sh -c '
-            echo "=== pip version and location ==="
-            python -m pip --version
-            echo "=== pip vendor path ==="
-            python -c "import pip._vendor; print(pip._vendor.__path__)"
-            echo "=== matching files ==="
-            find /usr/local/lib/python3.13 -type f -print 2>/dev/null | grep -Ei "msgpack|setuptools|urllib3" | head -100 || true
-          '
-
-
-
-      - name: Debug Python packages in image
+      - name: Check pip bundled package versions
         run: |
           docker run --rm scaler:latest python -c "
-          import importlib.metadata as m
-          for name in ['msgpack', 'setuptools', 'urllib3', 'pip']:
-              try:
-                  p = m.distribution(name)
-                  print(name, p.version, p.locate_file(''))
-              except m.PackageNotFoundError:
-                  print(name, 'NOT FOUND in package metadata')
+          import pip
+          print('pip version:', pip.__version__)
+          try:
+              from pip._vendor import msgpack
+              print('Bundled msgpack:', getattr(msgpack, '__version__', 'unknown'))
+          except ImportError as e:
+              print('msgpack:', e)
+          try:
+              from pip._vendor import urllib3
+              print('Bundled urllib3:', urllib3.__version__)
+          except ImportError as e:
+              print('urllib3:', e)
           "
-
-      - name: Inspect Python package files
-        run: |
-          docker run --rm scaler:latest sh -c '
-            echo "=== Python package directories ==="
-            find /usr/local/lib/python3.13/site-packages \
-              -maxdepth 2 \
-                \( -iname "*msgpack*" -o \
-                -iname "*setuptools*" -o \
-                -iname "*urllib3*" \) \
-              -print 2>/dev/null || true
-
-            echo "=== Python installation paths ==="
-            python -c "import sys; print(*sys.path, sep=\"\n\")"
           '
       - name: Run Trivy diagnostic scan
         uses: aquasecurity/trivy-action@v0.36.0
