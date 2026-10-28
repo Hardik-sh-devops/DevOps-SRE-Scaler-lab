@@ -92,9 +92,9 @@ jobs:
           name: trivy-diagnostic-report
           path: trivy-report.json
       
-      - name: Show Trivy findings
+      - name: Inspect Trivy package metadata
         run: |
-          jq -r '
+          jq '
             .Results[]? as $r |
             $r.Vulnerabilities[]? |
             select(
@@ -102,16 +102,15 @@ jobs:
               .PkgName == "setuptools" or
               .PkgName == "urllib3"
             ) |
-            [
-              .PkgName,
-              .InstalledVersion,
-              .FixedVersion,
-              .VulnerabilityID,
-              $r.Target
-            ] | @tsv
+            {
+              Target: $r.Target,
+              Class: $r.Class,
+              Type: $r.Type,
+              Package: .PkgName,
+              InstalledVersion: .InstalledVersion,
+              FixedVersion: .FixedVersion,
+              VulnerabilityID: .VulnerabilityID,
+              PkgIdentifier: .PkgIdentifier,
+              PrimaryURL: .PrimaryURL
+            }
           ' trivy-report.json
-
-      
-
-      
-      
