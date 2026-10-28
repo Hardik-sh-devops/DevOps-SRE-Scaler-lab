@@ -52,26 +52,18 @@ jobs:
         run: docker build -t scaler:latest .
 
       
+      
       - name: Inspect pip bundled components
         run: |
           docker run --rm scaler:latest sh -c '
             echo "=== pip version and location ==="
             python -m pip --version
-
-            echo "=== pip bundled vendor packages ==="
-            python -c "
-        import pip._vendor
-        print(pip._vendor.__path__)
-        "
-
-            echo "=== matching files in Python installation ==="
-            find /usr/local/lib/python3.13 \
-              -type f \
-              \( -iname "*msgpack*" -o \
-                -iname "*setuptools*" -o \
-                -iname "*urllib3*" \) \
-              -print 2>/dev/null | head -100
+            echo "=== pip vendor path ==="
+            python -c "import pip._vendor; print(pip._vendor.__path__)"
+            echo "=== matching files ==="
+            find /usr/local/lib/python3.13 -type f -print 2>/dev/null | grep -Ei "msgpack|setuptools|urllib3" | head -100 || true
           '
+
 
 
       - name: Debug Python packages in image
