@@ -51,12 +51,17 @@ jobs:
       - name: Build Docker image
         run: docker build -t scaler:latest .
 
-      - name: Inspect Python packages
+      - name: Debug Python packages in image
         run: |
-          docker image inspect scaler:latest --format '{{.Id}}'
-          docker run --rm scaler:latest python -m pip list
-          docker run --rm scaler:latest python -c "import importlib.metadata as m; print([(p, m.version(p)) for p in ['msgpack', 'setuptools', 'urllib3'] if any(d.metadata['Name'].lower() == p for d in m.distributions())])"
-
+          docker run --rm scaler:latest python -c "
+          import importlib.metadata as m
+          for name in ['msgpack', 'setuptools', 'urllib3', 'pip']:
+              try:
+                  p = m.distribution(name)
+                  print(name, p.version, p.locate_file(''))
+              except m.PackageNotFoundError:
+                  print(name, 'NOT FOUND in package metadata')
+          "
       - name: Run Trivy diagnostic scan
         uses: aquasecurity/trivy-action@v0.36.0
         with:
