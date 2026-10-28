@@ -55,17 +55,13 @@ jobs:
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: scaler
-          format: json
-          output: trivy-report.json
+          format: table
           exit-code: '1'
           severity: CRITICAL,HIGH
 
-      - name: Show trivy findings
-        if: always()
-        run: cat trivy-report.json
+      
 
-      - name: Check vulnerabilities
-        run: bash script/check_vulnerabilities.sh
+      
 
       
       
