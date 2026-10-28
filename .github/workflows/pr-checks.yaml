@@ -57,7 +57,7 @@ jobs:
           severity: CRITICAL,HIGH
 
       - name: Check vulnerabilities
-        run: bash check_vulnerabilities.sh
+        run: bash script/check_vulnerabilities.sh
 
       
       
