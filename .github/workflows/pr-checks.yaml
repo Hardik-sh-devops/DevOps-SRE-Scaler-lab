@@ -53,9 +53,8 @@ jobs:
 
       - name: Inspect Python packages
         run: |
-          docker run --rm scaler:latest python -m pip list
-          docker run --rm scaler:latest python -c "import sys; print(sys.executable); print(sys.path)"
           docker image inspect scaler:latest --format '{{.Id}}'
+          docker run --rm scaler:latest python -m pip show msgpack setuptools urllib3
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@v0.36.0
