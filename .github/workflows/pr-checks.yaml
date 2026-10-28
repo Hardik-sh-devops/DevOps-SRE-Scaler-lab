@@ -39,6 +39,10 @@ jobs:
       - name: Run Security Testing
         run: bandit -r app/ -f json -o bandit-report.json
 
+      - name: Show Bandit findings
+        if: always()
+        run: cat bandit-report.json
+
       - name: Secret Scanning
         uses: gitleaks/gitleaks-action@v3
         env:
