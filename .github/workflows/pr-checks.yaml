@@ -92,6 +92,24 @@ jobs:
           name: trivy-diagnostic-report
           path: trivy-report.json
       
+      - name: Show Trivy findings
+        run: |
+          jq -r '
+            .Results[]? as $r |
+            $r.Vulnerabilities[]? |
+            select(
+              .PkgName == "msgpack" or
+              .PkgName == "setuptools" or
+              .PkgName == "urllib3"
+            ) |
+            [
+              .PkgName,
+              .InstalledVersion,
+              .FixedVersion,
+              .VulnerabilityID,
+              $r.Target
+            ] | @tsv
+          ' trivy-report.json
 
       
 
