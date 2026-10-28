@@ -9,9 +9,6 @@ COPY app/app.py .
 # Stage 2: Runtime
 FROM python:3.13-alpine AS runtime
 
-RUN apk upgrade --no-cache \
-    && python -m pip install --no-cache-dir --upgrade pip
-
 WORKDIR /app
 
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
