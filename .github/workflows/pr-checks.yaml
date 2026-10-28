@@ -51,22 +51,11 @@ jobs:
       - name: Build Docker image
         run: docker build -t scaler:latest .
 
+      
       - name: Check pip bundled package versions
         run: |
-          docker run --rm scaler:latest python -c "
-          import pip
-          print('pip version:', pip.__version__)
-          try:
-              from pip._vendor import msgpack
-              print('Bundled msgpack:', getattr(msgpack, '__version__', 'unknown'))
-          except ImportError as e:
-              print('msgpack:', e)
-          try:
-              from pip._vendor import urllib3
-              print('Bundled urllib3:', urllib3.__version__)
-          except ImportError as e:
-              print('urllib3:', e)
-          "
+          docker run --rm scaler:latest python -c 'import pip; print("pip version:", pip.__version__); from pip._vendor import msgpack, urllib3; print("Bundled msgpack:", msgpack.__version__); print("Bundled urllib3:", urllib3.__version__)'
+
           '
       - name: Run Trivy diagnostic scan
         uses: aquasecurity/trivy-action@v0.36.0
