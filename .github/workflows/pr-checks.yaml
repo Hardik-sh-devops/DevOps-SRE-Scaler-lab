@@ -3,7 +3,7 @@ name: Pr Checks
 on:
   push:
     branches:
-      - feature
+      - working
 
 permissions:
   contents: read
