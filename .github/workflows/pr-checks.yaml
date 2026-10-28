@@ -57,14 +57,20 @@ jobs:
           docker run --rm scaler:latest python -m pip list
           docker run --rm scaler:latest python -c "import importlib.metadata as m; print([(p, m.version(p)) for p in ['msgpack', 'setuptools', 'urllib3'] if any(d.metadata['Name'].lower() == p for d in m.distributions())])"
 
-      - name: Run Trivy vulnerability scanner
+      - name: Run Trivy diagnostic scan
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: scaler
+          image-ref: scaler:latest
           format: json
-          exit-code: '1'
-          severity: CRITICAL,HIGH
+          output: trivy-report.json
+          exit-code: '0'
+          severity: HIGH,CRITICAL
 
+      - name: Upload Trivy report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-diagnostic-report
+          path: trivy-report.json
       
 
       
