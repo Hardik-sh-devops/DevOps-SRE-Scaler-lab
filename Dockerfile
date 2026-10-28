@@ -10,6 +10,7 @@ COPY app/app.py .
 FROM python:3.13-alpine AS runtime
 
 RUN apk upgrade --no-cache
+RUN python -m pip install --no-cache-dir --upgrade pip
 
 WORKDIR /app
 
