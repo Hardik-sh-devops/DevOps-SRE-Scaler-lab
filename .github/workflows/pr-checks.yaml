@@ -56,7 +56,6 @@ jobs:
         run: |
           docker run --rm scaler:latest python -c 'import pip; print("pip version:", pip.__version__); from pip._vendor import msgpack, urllib3; print("Bundled msgpack:", msgpack.__version__); print("Bundled urllib3:", urllib3.__version__)'
 
-          '
       - name: Run Trivy diagnostic scan
         uses: aquasecurity/trivy-action@v0.36.0
         with:
