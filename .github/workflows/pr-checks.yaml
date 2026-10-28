@@ -49,7 +49,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build Docker image
-        run: docker build -t scaler .
+        run: docker build -t scaler:latest .
+
+      - name: Inspect built image
+        run: |
+          docker image inspect scaler:latest --format '{{.Id}}'
+          docker run --rm scaler:latest python -m pip list
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@v0.36.0
