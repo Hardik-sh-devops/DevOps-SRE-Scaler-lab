@@ -59,3 +59,19 @@ jobs:
           exit-code: '1'
           severity: HIGH,CRITICAL
           trivyignores: .trivyignore
+
+      - name: Create Pull Request
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH_NAME: ${{ github.ref_name }}
+        run: |
+          if gh pr view "$BRANCH_NAME" --base main >/dev/null 2>&1; then
+            echo "Pull request already exists."
+          else
+            gh pr create \
+              --base main \
+              --head "$BRANCH_NAME" \
+              --title "Security-approved: $BRANCH_NAME" \
+              --body "Automatically created after all security and quality gates passed."
+          fi
