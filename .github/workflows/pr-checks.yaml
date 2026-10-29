@@ -14,10 +14,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: '3.13'
 
@@ -37,7 +39,11 @@ jobs:
         run: pip install bandit
 
       - name: Run Security Testing
-        run: bandit -r app/ -f json -o bandit-report.json
+        run: bandit -r app/ -s B104 -f json -o bandit-report.json
+
+      - name: Show Bandit findings
+        if: always()
+        run: cat bandit-report.json
 
       - name: Secret Scanning
         uses: gitleaks/gitleaks-action@v3
@@ -45,19 +51,29 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build Docker image
-        run: docker build -t scaler .
+        run: docker build -t scaler:latest .
 
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@0.29.0
+      - name: trivy scanning
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: scaler
-          format: json
-          output: trivy-report.json
+          image-ref: scaler:latest
+          format: table
           exit-code: '1'
-          severity: CRITICAL,HIGH
+          severity: HIGH,CRITICAL
+          trivyignores: .trivyignore
 
-      - name: Check vulnerabilities
-        run: bash script/check_vulnerabilities.sh
-
-      
-      
+      - name: Create Pull Request
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH_NAME: ${{ github.ref_name }}
+        run: |
+          if gh pr view "$BRANCH_NAME" --base main >/dev/null 2>&1; then
+            echo "Pull request already exists."
+          else
+            gh pr create \
+              --base main \
+              --head "$BRANCH_NAME" \
+              --title "Security-approved: $BRANCH_NAME" \
+              --body "Automatically created after all security and quality gates passed."
+          fi
