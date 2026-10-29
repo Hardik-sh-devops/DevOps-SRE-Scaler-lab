@@ -11,13 +11,13 @@ fi
 # Prevent this helper from pushing directly to main.
 if [ "$CURRENT_BRANCH" = "main" ]; then
     echo "ERROR: You are on main."
-    echo "This script only pushes feature branches."
+    echo "This script only pushes working branches."
     exit 1
 fi
 
-# Ensure the current branch follows the feature/* naming convention.
-if [[ "$CURRENT_BRANCH" != feature/* ]]; then
-    echo "ERROR: You are not on a feature branch."
+# Ensure the current branch follows the working/* naming convention.
+if [[ "$CURRENT_BRANCH" != working ]]; then
+    echo "ERROR: You are not on a working branch."
     echo "Current branch: $CURRENT_BRANCH"
     exit 1
 fi
