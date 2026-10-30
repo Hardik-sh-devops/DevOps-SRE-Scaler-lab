@@ -1,0 +1,125 @@
+
+name: Release Pipeline
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  contents: write
+  packages: write
+  pull-requests: write
+
+concurrency:
+  group: release-main
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build and Release
+    if: |
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.head.ref != 'feature/release-pipeline'
+
+    runs-on: ubuntu-latest
+
+    env:
+      IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/scaler
+      RELEASE_BRANCH: gitops/update-image-${{ github.event.pull_request.merge_commit_sha }}
+
+    steps:
+      # 1. Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 2. Generate release version
+      - name: Generate release version
+        id: version
+        run: |
+          git fetch --tags
+          LATEST=$(git tag -l 'v*' --sort=-version:refname | head -n 1)
+
+          if [ -z "$LATEST" ]; then
+            VERSION="v1.0.0"
+          else
+            VERSION=${LATEST#v}
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+            PATCH=$((PATCH + 1))
+            VERSION="v$MAJOR.$MINOR.$PATCH"
+          fi
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      # 3. Login to GHCR
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # 4. Build image
+      - name: Build image
+        run: |
+          docker build -t "$IMAGE_NAME:${{ steps.version.outputs.version }}" .
+
+      # 5. Scan image
+      - name: Scan image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          scanners: vuln
+          vuln-type: os,library
+          severity: HIGH,CRITICAL
+
+      # 6. Push image
+      - name: Push image
+        run: |
+          docker push "$IMAGE_NAME:${{ steps.version.outputs.version }}"
+
+      # 7. Update Kubernetes manifest
+      - name: Update Kubernetes manifests
+        run: |
+          chmod +x script/update_kubernetes.sh
+
+          script/update_kubernetes.sh \
+            "$IMAGE_NAME" \
+            "${{ steps.version.outputs.version }}"
+
+      # 8. Commit and push Release branch
+      - name: Commit and push Release branch
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add k8s/deployment.yaml
+          git commit -m "chore: update image to $VERSION"
+          git push -u origin "$RELEASE_BRANCH"
+
+      # 9. Create GitOps pull request
+      - name: Create Release pull request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          gh pr create \
+            --base main \
+            --head "$RELEASE_BRANCH" \
+            --title "chore: deploy $VERSION" \
+            --body "Updates Kubernetes image to $IMAGE_NAME:$VERSION. Image passed the Trivy scan. Merge this PR to let ArgoCD deploy the new image."
+
+      # 10. Create Git tag
+      - name: Create Git tag
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          git tag "$VERSION"
+          git push origin "$VERSION"
