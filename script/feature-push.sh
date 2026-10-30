@@ -16,7 +16,7 @@ if [ "$CURRENT_BRANCH" = "main" ]; then
 fi
 
 # Ensure the current branch follows the working/* naming convention.
-if [[ "$CURRENT_BRANCH" != working ]]; then
+if [[ "$CURRENT_BRANCH" != feature/* ]]; then
     echo "ERROR: You are not on a working branch."
     echo "Current branch: $CURRENT_BRANCH"
     exit 1
