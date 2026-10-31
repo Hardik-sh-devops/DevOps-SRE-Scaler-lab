@@ -21,7 +21,7 @@ spec:
       serviceAccountName: scaler-sa
       containers:
         - name: scaler
-          image: ghcr.io/Hardik-sh-devops/scaler:v1.0.0
+          image: ghcr.io/hardik-sh-devops/scaler:v1.0.0
           ports:
             - name: http
               containerPort: 8080
