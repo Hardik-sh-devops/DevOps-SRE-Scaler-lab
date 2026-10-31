@@ -60,7 +60,4 @@ spec:
             limits:
               cpu: "100m"
               memory: "64Mi"
-          volumeMounts:
-            - name: app-config
-              mountPath: /config
-              readOnly: true
+          
