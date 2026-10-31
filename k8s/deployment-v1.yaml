@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scaler-v1
+  namespace: scaler
+  labels:
+    app: scaler
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: scaler
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: scaler
+        version: v1
+    spec:
+      serviceAccountName: scaler-sa
+      containers:
+        - name: scaler
+          image: ghcr.io/Hardik-sh-devops/scaler:v1.0.0
+          ports:
+            - name: http
+              containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: scaler-config
+            - secretRef:
+                name: scaler-secret
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "400Mi"
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 20
+      initContainers:
+        - name: check-config
+          image: busybox:1.36
+          command: ["sh", "-c", "test -f /config/APP_ENV"]
+          volumeMounts:
+            - name: app-config
+              mountPath: /config
+              readOnly: true
+      volumes:
+        - name: app-config
+          configMap:
+            name: scaler-config
