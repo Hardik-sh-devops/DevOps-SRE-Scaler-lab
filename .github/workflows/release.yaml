@@ -20,12 +20,12 @@ jobs:
     name: Build and Release
     if: |
       github.event.pull_request.merged == true &&
-      github.event.pull_request.head.ref != 'feature/release-pipeline'
+      !startsWith(github.event.pull_request.head.ref, 'gitops/update-image-')
 
     runs-on: ubuntu-latest
 
     env:
-      IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/scaler
+      IMAGE_NAME: ghcr.io/hardik-sh-devops/scaler
       RELEASE_BRANCH: gitops/update-image-${{ github.event.pull_request.merge_commit_sha }}
 
     steps:
@@ -33,6 +33,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 0
 
       # 2. Generate release version
@@ -83,7 +84,16 @@ jobs:
         run: |
           docker push "$IMAGE_NAME:${{ steps.version.outputs.version }}"
 
-      # 7. Update Kubernetes manifest
+
+      # 7. Create Git tag
+      - name: Create Git tag
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          git tag "$VERSION"
+          git push origin "$VERSION"
+
+      # 8. Update Kubernetes manifest
       - name: Update Kubernetes manifests
         run: |
           chmod +x script/update_kubernetes.sh
@@ -92,19 +102,20 @@ jobs:
             "$IMAGE_NAME" \
             "${{ steps.version.outputs.version }}"
 
-      # 8. Commit and push Release branch
+      # 9. Commit and push Release branch
       - name: Commit and push Release branch
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          git add k8s/deployment.yaml
+          git add k8s/deployment-v1.yaml \
+                  k8s/deployment-v2.yaml \
+                  k8s/deployment-v3.yaml
           git commit -m "chore: update image to $VERSION"
           git push -u origin "$RELEASE_BRANCH"
 
-      # 9. Create GitOps pull request
+      # 10. Create GitOps pull request
       - name: Create Release pull request
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -116,10 +127,4 @@ jobs:
             --title "chore: deploy $VERSION" \
             --body "Updates Kubernetes image to $IMAGE_NAME:$VERSION. Image passed the Trivy scan. Merge this PR to let ArgoCD deploy the new image."
 
-      # 10. Create Git tag
-      - name: Create Git tag
-        env:
-          VERSION: ${{ steps.version.outputs.version }}
-        run: |
-          git tag "$VERSION"
-          git push origin "$VERSION"
+      

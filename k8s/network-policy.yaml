@@ -1,0 +1,23 @@
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: scaler-network-policy
+  namespace: scaler
+
+spec:
+  podSelector:
+    matchLabels:
+      app: scaler
+
+  policyTypes:
+    - Ingress
+
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: scaler
+      ports:
+        - protocol: TCP
+          port: 8080
