@@ -50,14 +50,18 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 20
       initContainers:
-        - name: check-config
-          image: busybox:1.36
-          command: ["sh", "-c", "test -f /config/APP_ENV"]
+        - name: preflight
+          image: busybox:1.36.1
+          command: ["sh", "-c", "test -d /tmp"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
           resources:
             requests:
-              cpu: "50m"
-              memory: "32Mi"
+              cpu: 5m
+              memory: 8Mi
             limits:
-              cpu: "100m"
-              memory: "64Mi"
+              cpu: 50m
+              memory: 16Mi
           
